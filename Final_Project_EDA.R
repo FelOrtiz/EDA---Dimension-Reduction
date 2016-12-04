@@ -7,25 +7,23 @@ dataset <- read.csv(url(url_file), header = TRUE, sep = ",")
 clean_dataset <- subset(dataset, select = -c(A:D, F, H))
 
 
-#Now we normalize the values within a range from 0 to 1
-norm_datase <- normalize(clean_dataset)
-
 #Function that normalize every value from 0 to 1 using Feature scaling.
 normalize <- function(clean_dataset)
 {
   new_dataset <- clean_dataset
   
-  #Start from 4 to datasets columns number
-  for (i in 4:ncol(new_dataset)) 
+  #Start from 4 to dataset columns number
+  for (i in 4:ncol(clean_dataset)) 
   {
+    #Get the min of its column
+    min <- min(clean_dataset[,i])
+    #Get the max of its column
+    max <- max(clean_dataset[,i])
+    
     for(j in 1:nrow(new_dataset))
     {
       #Get the original value
       original_x <- clean_dataset[j,i]
-      #Get the min of its column
-      min <- min(clean_dataset[,i])
-      #Get the max of its column
-      max <- max(clean_dataset[,i])
       #We rescale it
       new_x <- rescaling(original_x, min, max)
       #Then, we put the rescaled value on original value position
@@ -39,8 +37,55 @@ normalize <- function(clean_dataset)
 #Function that implements the formula for the simplest way to rescaling.
 rescaling <- function(value, min, max)
 {
-  val <- (value - min)/(max-min)
+  val <- (value-min) / (max-min)
   return(val)
 }
+
+
+#Now we normalize the values within a range from 0 to 1
+norm_dataset <- normalize(clean_dataset)
+
+
+#If you don't have FSelector library uncomment the following line
+#install.packages("FSelector")
+library(FSelector)
+
+
+#----Feature Ranking Algorithms
+
+#--Chi-squared Filter
+
+#Prediction over green columns
+we <- chi.squared(E~., subset(norm_dataset, select = -c(G,I)))
+wg <- chi.squared(G~., subset(norm_dataset, select = -c(E,I)))
+wi <- chi.squared(I~., subset(norm_dataset, select = -c(E,G)))
+
+#Get 10 best predictions
+subset_we <- cutoff.k(we, 10)
+subset_wg <- cutoff.k(wg, 10)
+subset_wi <- cutoff.k(wi, 10)
+
+f_we <- as.simple.formula(subset_we, "E")
+print(f_we)
+f_we <- as.simple.formula(subset_wg, "G")
+print(f_wg)
+f_we <- as.simple.formula(subset_wi, "I")
+print(f_wi)
+
+
+#Correlation Filter
+#linear.correlation()
+
+#Entropy-Based Filter
+#information.gain()
+
+
+#symmetrical.uncertainty()
+
+#Random Forest Filter
+#random.forest.importance(formula, data, importance.type = 1)
+
+#----Feature Subset Selection Algorithms
+
 
 
