@@ -45,47 +45,92 @@ rescaling <- function(value, min, max)
 #Now we normalize the values within a range from 0 to 1
 norm_dataset <- normalize(clean_dataset)
 
+#write.csv(norm_dataset, "C:/Users/HoLeX/Desktop/norm_dataset.csv", row.names=F)
+#write.table(norm_dataset, "C:/Users/HoLeX/Desktop/norm_dataset.txt", sep="\t")
+
 
 #If you don't have FSelector library uncomment the following line
 #install.packages("FSelector")
 library(FSelector)
 
 
+execute <- function(class, letter, subset, picks)
+{
+
 #----Feature Ranking Algorithms
 
 #--Chi-squared Filter
 
-#Prediction over green columns
-we <- chi.squared(E~., subset(norm_dataset, select = -c(G,I)))
-wg <- chi.squared(G~., subset(norm_dataset, select = -c(E,I)))
-wi <- chi.squared(I~., subset(norm_dataset, select = -c(E,G)))
+chi <- chi.squared(class, subset)
+subset_chi <- cutoff.k(chi, picks)
+out_chi <- as.simple.formula(subset_chi, letter)
+cat("Chi-squared Filter\n")
+print(out_chi)
 
-#Get 10 best predictions
-subset_we <- cutoff.k(we, 10)
-subset_wg <- cutoff.k(wg, 10)
-subset_wi <- cutoff.k(wi, 10)
+#--Correlation Filter
 
-f_we <- as.simple.formula(subset_we, "E")
-print(f_we)
-f_we <- as.simple.formula(subset_wg, "G")
-print(f_wg)
-f_we <- as.simple.formula(subset_wi, "I")
-print(f_wi)
+linear <- linear.correlation(class, subset)
+subset_linear <- cutoff.k(linear, picks)
+out_linear <- as.simple.formula(subset_linear, letter)
+cat("Correlation Filter - Pearson’s correlation\n")
+print(out_linear)
 
+#--
 
-#Correlation Filter
-#linear.correlation()
+rank <- rank.correlation(class, subset)
+subset_rank <- cutoff.k(rank, picks)
+out_rank <- as.simple.formula(subset_rank, letter)
+cat("Correlation Filter - Spearman’s correlation\n")
+print(out_rank)
 
-#Entropy-Based Filter
-#information.gain()
+#--Entropy-Based Filter
 
+inf_gain <- information.gain(class, subset, unit = "log2")
+subset_inf_gain <- cutoff.k(inf_gain, picks)
+out_inf_gain <- as.simple.formula(subset_inf_gain, letter)
+cat("Entropy-Based Filter - Information Gain\n")
+print(out_inf_gain)
 
-#symmetrical.uncertainty()
+#--
 
-#Random Forest Filter
-#random.forest.importance(formula, data, importance.type = 1)
+gain_ratio <- gain.ratio(class, subset, unit = "log2")
+subset_gain_ratio <- cutoff.k(gain_ratio, picks)
+out_gain_ratio <- as.simple.formula(subset_gain_ratio, letter)
+cat("Entropy-Based Filter - Gain Ratio\n")
+print(out_gain_ratio)
 
-#----Feature Subset Selection Algorithms
+#--
+
+sym_unc <- symmetrical.uncertainty(class, subset, unit = "log2")
+subset_sym_unc <- cutoff.k(sym_unc, picks)
+out_sym_unc <- as.simple.formula(subset_sym_unc, letter)
+cat("Entropy-Based Filter - Symmetrical Uncertainty\n")
+print(out_sym_unc)
+
+#--One R Algorith
+
+one_r <- oneR(class, subset)
+subset_one_r <- cutoff.k(one_r, picks)
+out_one_r <- as.simple.formula(subset_one_r, letter)
+cat("One R Algorith\n")
+print(out_one_r)
+
+}
+
+num_values <- 10
+subset_E <- subset(norm_dataset, select = -c(G,I))
+subset_G <- subset(norm_dataset, select = -c(E,I))
+subset_I <- subset(norm_dataset, select = -c(E,G))
+
+out <- capture.output(execute(E~., "E", subset_E, num_values))
+cat("Output", out, file="C:/Users/HoLeX/Desktop/E.txt", sep="\n", append=TRUE)
+
+out <- capture.output(execute(G~., "G", subset_G, num_values))
+cat("Output", out, file="C:/Users/HoLeX/Desktop/G.txt", sep="\n", append=TRUE)
+
+out <- capture.output(execute(I~., "I", subset_I, num_values))
+cat("Output", out, file="C:/Users/HoLeX/Desktop/I.txt", sep="\n", append=TRUE)
+
 
 
 
